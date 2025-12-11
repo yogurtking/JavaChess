@@ -1,0 +1,34 @@
+/* ===== Board Square Colors ===== */
+
+.light-square {
+    -fx-background-color: #f0d9b5;   /* light tan */
+}
+
+.dark-square {
+    -fx-background-color: #b58863;   /* dark brown */
+}
+
+
+/* Border highlight (for selection or hovered piece) */
+.highlight-square {
+    -fx-border-color: gold;
+    -fx-border-width: 3;
+    -fx-border-radius: 3;
+}
+
+/* Stronger border used for selected piece */
+.selected-square {
+    -fx-border-color: dodgerblue;
+    -fx-border-width: 4;
+    -fx-border-radius: 3;
+}
+
+
+/* Dot in the center of a legal move square (like Lichess) */
+.legal-move-dot {
+    -fx-background-color: rgba(0,0,0,0.25), transparent;
+    -fx-background-insets: 0 20 0 20, 0; 
+    -fx-background-radius: 50%, 0;
+   
+}
+
