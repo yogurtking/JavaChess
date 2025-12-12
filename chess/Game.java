@@ -1,7 +1,4 @@
-//Submission by: Andrew McMullan
-//Date: 12/11/2025 
-//assignment: module 13, assignment 20
-//Short description: primary class for the chess game, controls UI and also the main type
+
 
 package chess;
 
@@ -378,3 +375,4 @@ public class Game extends Application{
 		launch(args);
 	}
 }
+
