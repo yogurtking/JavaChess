@@ -1,4 +1,7 @@
-
+//Submission by: Andrew McMullan
+//Date: 12/11/2025 
+//assignment: module 13, assignment 20
+//Short description: primary class for the chess game, controls UI and also the main type
 
 package chess;
 
@@ -31,8 +34,17 @@ public class Game extends Application{
 		static List<Move> history = new ArrayList<>();
 		static String playerOne = "Gary Fisher";
 		static String playerTwo = "Paul Morphy";
-		
+		static Button startButton = new Button("Start");
+		static VBox root;
 	public void startGame() {
+		//clear the board just in case another match has already happened.
+		for (int r = 0; r < 8; r++) {
+		    for (int c = 0; c < 8; c++) {
+		        square[r][c].getChildren().clear();
+		        board.getArray()[r][c] = null;
+		    }
+		}
+
 		//put pieces on the board, and in location array
 		//black pawns row 1, white row 6
 		for (int column = 0; column < 8; column++) {
@@ -56,15 +68,103 @@ public class Game extends Application{
 		board.setPiece(7, 6, new Piece.Knight(PlayerColor.WHITE));
 		square[7][6].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,6)));
 		//bishops
-		
+		board.setPiece(0, 2, new Piece.Bishop(PlayerColor.BLACK));
+		square[0][2].getChildren().add(ImageAssets.outlineImage(board.getPiece(0,2)));
+		board.setPiece(0, 5, new Piece.Bishop(PlayerColor.BLACK));
+		square[0][5].getChildren().add(ImageAssets.outlineImage(board.getPiece(0,5)));
+		board.setPiece(7, 2, new Piece.Bishop(PlayerColor.WHITE));
+		square[7][2].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,2)));
+		board.setPiece(7, 5, new Piece.Bishop(PlayerColor.WHITE));
+		square[7][5].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,5)));
 		//queens
-		
+		board.setPiece(0, 4, new Piece.Queen(PlayerColor.BLACK));
+		square[0][4].getChildren().add(ImageAssets.outlineImage(board.getPiece(0,4)));
+		board.setPiece(7, 4, new Piece.Queen(PlayerColor.WHITE));
+		square[7][4].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,4)));
 		//rooks
+		board.setPiece(0, 0, new Piece.Rook(PlayerColor.BLACK));
+		square[0][0].getChildren().add(ImageAssets.outlineImage(board.getPiece(0,0)));
+		board.setPiece(0, 7, new Piece.Rook(PlayerColor.BLACK));
+		square[0][7].getChildren().add(ImageAssets.outlineImage(board.getPiece(0,7)));
+		board.setPiece(7, 0, new Piece.Rook(PlayerColor.WHITE));
+		square[7][0].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,0)));
+		board.setPiece(7, 7, new Piece.Rook(PlayerColor.WHITE));
+		square[7][7].getChildren().add(ImageAssets.outlineImage(board.getPiece(7,7)));
 		
 		round = new Round();
 		turnLabel.setText(String.format("Current Round: %d\n%s's turn.", round.getTurnCount(), getPlayer(round.getSideToMove()) ));
 	}
+	//for checking if a king is in check while validating a given move and for checkmate
 	
+	
+	
+	public void gameOver() {
+		root.getChildren().addAll(startButton);
+		//turnLabel.setText("Welcome to Chess\nThe Game of King's");
+		
+	}
+	
+	
+	public static boolean isKingInCheck(PlayerColor side, Piece[][] board) {
+		int kingsRow = -1;
+		int kingsColumn = -1;
+		
+		outer:
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0;c<8; c++) {
+				Piece p = board[r][c];
+				if (p != null && p.getType() == PieceType.KING && p.getColor() == side) {
+					kingsRow = r;
+					kingsColumn = c;
+					break outer;//saves some work, we exit the loop once king is found
+				}
+			}
+		}
+		PlayerColor opponent = side.opposite();
+		
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0;c<8; c++) {
+				Piece p = board[r][c];
+				if (p != null && p.getColor() == opponent) {
+					for (Move m : p.getPotentialMoves(r, c, board)) {
+						if (m.toRow == kingsRow && m.toColumn == kingsColumn) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	//check for checkmate
+	public boolean hasEscape(PlayerColor side, Piece[][] board) {
+		 for (int r = 0; r < 8; r++) {
+			 for (int c = 0; c < 8; c++) {
+		       	Piece p = board[r][c];
+		       	if (p == null || p.getColor() != side) continue;
+		       	
+		       	for (Move m : p.getPotentialMoves(r,  c, board)) {
+		       		Piece captured = board[m.toRow][m.toColumn];
+		       		board[m.toRow][m.toColumn] = p;
+		       		board[r][c] = null;
+		        		
+		       		boolean stillInCheck = isKingInCheck(side, board);
+		        		
+		       		//undo move
+		       		board[r][c] = p;
+		       		board[m.toRow][m.toColumn] = captured;
+		        		
+		       		if (!stillInCheck) {
+		       			return true;//found at least one way out.
+		        	}
+		       	}
+			 }
+		 }
+		
+		
+		return false;
+	}
 	//return name of PlayerColor player
 	public String getPlayer(PlayerColor color) {
 		return color == PlayerColor.WHITE ? playerOne : playerTwo;
@@ -136,6 +236,23 @@ public class Game extends Application{
 							round.getSideToMove()));
 							
 		clearSelection();
+		
+		//checkmate detection
+		boolean inCheck = isKingInCheck(round.getSideToMove(),board.getArray());
+		boolean escape = hasEscape(round.getSideToMove(), board.getArray());
+		
+		if (inCheck && !escape) {
+			//checkmate
+			turnLabel.setText(String.format("Current Round: %d\nCheckmate! %s wins!", round.getTurnCount(), getPlayer(round.getSideToMove().opposite())));
+			gameOver();
+		} else if (!inCheck && !escape) {
+			//stalemate
+			turnLabel.setText(String.format("Current Round: %d\nStalemate! We're all winners!", round.getTurnCount(), getPlayer(round.getSideToMove().opposite())));
+			gameOver();
+		} else if (inCheck) {
+			//just in check
+			turnLabel.setText(String.format("Current Round: %d\n%s's turn, watch out, you are in Check!", round.getTurnCount(), getPlayer(round.getSideToMove()) ));
+		}
 	}
 	
 	
@@ -153,14 +270,14 @@ public class Game extends Application{
 			selectedRow = row;
 			selectedColumn = column;
 			//also show legal moves here based on what is selected
-			showLegalMoves(board.getPiece(row,column).getLegalMoves(selectedRow, selectedColumn, board.board));
+			showLegalMoves(board.getPiece(row,column).getLegalMoves(selectedRow, selectedColumn, board.board, board.getPiece(row, column).getColor()));
 			return;
 		}
 		
 		//something is already selected, 
 		
 		Piece selectedPiece = board.getPiece(selectedRow, selectedColumn);
-		for (Move move : selectedPiece.getLegalMoves(selectedRow, selectedColumn, board.board)) {
+		for (Move move : selectedPiece.getLegalMoves(selectedRow, selectedColumn, board.board, selectedPiece.getColor())) {
 			if (move.toRow == row && move.toColumn == column) {
 				//do the move, need a method for this
 				executeMove(move);
@@ -178,7 +295,7 @@ public class Game extends Application{
 			selectSquare(row, column);
 			selectedRow = row;
 			selectedColumn = column;
-			showLegalMoves(board.getPiece(row,column).getLegalMoves(row, column, board.board));
+			showLegalMoves(board.getPiece(row,column).getLegalMoves(row, column, board.board, board.getPiece(row, column).getColor()));
 			return;
 		}
 		
@@ -229,12 +346,12 @@ public class Game extends Application{
 		TextField p2NameField = new TextField();
 		
 		//button to start game
-		Button startButton = new Button("Start");
+		
 		
 		
 		HBox nameBox = new HBox(100,p1NameField,p2NameField); 
 		nameBox.setAlignment(Pos.CENTER);
-		VBox root = new VBox(turnLabel,boardGrid,nameBox, startButton);
+		root = new VBox(turnLabel,boardGrid,nameBox, startButton);
 		root.setAlignment(Pos.CENTER);
 		
 		startButton.setOnAction(e -> {
@@ -261,4 +378,3 @@ public class Game extends Application{
 		launch(args);
 	}
 }
-
